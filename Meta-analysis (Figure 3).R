@@ -10,7 +10,7 @@ at_vals  <- pe_to_neg(pe_ticks)
 at_vals  <- at_vals[is.finite(at_vals)]
 
 # read + prepare data
-dat <- read_excel("09042026_vbd_S1 Table.xlsx", sheet = 2) %>%
+dat <- read_excel("vbd_S1 Table.xlsx", sheet = 2) %>%
   rename(wolbachia_strain = wolbachia_type, metric = original_metric) %>%
   mutate(author = trimws(author))
 
@@ -52,12 +52,20 @@ make_forest <- function(plot_data, filename, main_title, sg_order,
   # subgroup assignment
   plot_data$sg <- NA
   w <- plot_data$intervention_class == "Wolbachia" & !is.na(plot_data$wolbachia_strain)
-  plot_data$sg[w & plot_data$wolbachia_strain == "wMel" & plot_data$virus == "DENV"]  <- "Wolbachia wMel -- DENV"
+  plot_data$sg[w & plot_data$wolbachia_strain == "wMel" & plot_data$virus == "DENV"]  <- "Wolbachia wMel replacement -- DENV"
   plot_data$sg[w & plot_data$wolbachia_strain == "wAlbB"]  <- "Wolbachia wAlbB replacement -- DENV"
-  plot_data$sg[w & plot_data$wolbachia_strain == "IIT-SIT"] <- "Wolbachia IIT-SIT -- DENV"
-  plot_data$sg[w & plot_data$wolbachia_strain == "wMel" & plot_data$virus == "CHIKV"] <- "Wolbachia wMel -- CHIKV"
-  plot_data$sg[w & plot_data$wolbachia_strain == "wMel" & plot_data$virus == "ZIKV"]  <- "Wolbachia wMel -- ZIKV"
+  plot_data$sg[w & plot_data$wolbachia_strain == "IIT-SIT"] <- "Wolbachia wAlbB IIT-SIT replacement -- DENV"
+  plot_data$sg[w & plot_data$wolbachia_strain == "wMel" & plot_data$virus == "CHIKV"] <- "Wolbachia wMel replacement -- CHIKV"
+  plot_data$sg[w & plot_data$wolbachia_strain == "wMel" & plot_data$virus == "ZIKV"]  <- "Wolbachia wMel replacement -- ZIKV"
   plot_data$sg[!w] <- plot_data$intervention_class[!w]
+
+  plot_data$sg[!w] <- ifelse(
+    plot_data$intervention_class[!w] == "Indoor residual spraying",
+    paste0(plot_data$intervention_class[!w], " -- ", plot_data$virus[!w]),
+    ifelse(plot_data$intervention_class[!w] == "Sterile insect technique",
+           "Sterile insect technique suppression",
+           plot_data$intervention_class[!w])
+  )
   
   dg <- ifelse(plot_data$study_design %in% c("cRCT","RCT"), "cRCT", "NRS")
   plot_data$subgroup <- paste0(plot_data$sg, " (", dg, ")")
@@ -153,10 +161,11 @@ make_forest <- function(plot_data, filename, main_title, sg_order,
 }
 
 # subgroup orderings 
-mosq_base <- c("Wolbachia wMel -- DENV", "Wolbachia wAlbB replacement -- DENV",
-               "Wolbachia IIT-SIT -- DENV", "Wolbachia wMel -- CHIKV",
-               "Wolbachia wMel -- ZIKV", "Sterile insect technique")
-other_base <- c("Insecticide-treated materials", "Indoor residual spraying",
+mosq_base <- c("Wolbachia wMel replacement – DENV", "Wolbachia wAlbB replacement – DENV",
+               "Wolbachia wMel replacement – CHIKV", "Wolbachia wMel replacement – ZIKV",
+               "Wolbachia wAlbB IIT-SIT suppression – DENV", "Sterile insect technique suppression")
+
+other_base <- c("Insecticide-treated materials", "Indoor residual spraying -- DENV", "Indoor residual spraying -- ABV",
                 "Autodissemination", "Environmental management",
                 "Spatial repellents", "Larvivorous predators",
                 "Mosquito repellents", "Integrated programs")
