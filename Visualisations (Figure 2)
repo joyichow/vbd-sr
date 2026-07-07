@@ -9,7 +9,7 @@ library(rnaturalearth)
 library(sf)
 library(cowplot)
 
-raw <- read_excel("09042026_vbd_S1 Table.xlsx", sheet = 1, skip = 1, col_names = TRUE)
+raw <- read_excel("vbd_S1 Table.xlsx", sheet = 1, skip = 1, col_names = TRUE)
 
 names(raw)[1] <- "study_label"
 country_col <- grep("Country|WHO", names(raw), value = TRUE)[1]
@@ -44,6 +44,15 @@ df <- df %>%
   mutate(country_clean = str_trim(country_clean)) %>%
   filter(country_clean != "")
 
+suppression_studies <- c("de Castro Poncio, 2023", "Lim, 2023", "Lim, 2024", "Lim, 2025", "Lim, 2026")
+
+df <- df %>%
+  mutate(intervention_class = case_when(
+    intervention_class == "Mosquito modification" & study %in% suppression_studies ~ "Mosquito modification (suppression)",
+    intervention_class == "Mosquito modification"                                  ~ "Mosquito modification (replacement)",
+    TRUE ~ intervention_class
+  ))
+
 # Panel A: Geographical distribution of studies
 country_counts <- df %>%
   distinct(study, country_clean) %>%
@@ -68,23 +77,23 @@ pA <- ggplot(world) +
         plot.margin = margin(5, 5, 0, 5))
 
 # Panel B: stacked barchart of study publication timeline
-ic_levels <- c("Mosquito modification", "Insecticide-treated materials (ITMs)",
-               "Integrated approaches", "Autodissemination",
-               "Environmental management", "Larvivorous predators",
-               "Mass trapping", "Mosquito repellents",
-               "Direct larviciding", "Indoor/targeted residual spraying")
+ic_levels <- c("Mosquito modification (replacement)", "Mosquito modification (suppression)",
+               "Insecticide-treated materials (ITMs)", "Integrated approaches", "Autodissemination",
+               "Environmental management", "Larvivorous predators", "Mass trapping",
+               "Mosquito repellents", "Direct larviciding", "Indoor/targeted residual spraying")
 
 ic_colours <- c(
-  "Mosquito modification"                = "#3182bd",
+  "Mosquito modification (replacement)"   = "#3182bd", 
+  "Mosquito modification (suppression)"   = "#9ecae1",  
   "Insecticide-treated materials (ITMs)"  = "#2ca02c",
-  "Integrated approaches"                = "#bcbd22",
-  "Autodissemination"                    = "#ff7f0e",
-  "Environmental management"             = "#ffbb78",
-  "Larvivorous predators"                = "#8c564b",
-  "Mass trapping"                        = "#9467bd",
-  "Mosquito repellents"                  = "#e377c2",
-  "Direct larviciding"                   = "#c7b8ea",
-  "Indoor/targeted residual spraying"    = "#7f7f7f")
+  "Integrated approaches"                 = "#bcbe90",
+  "Autodissemination"                     = "#ff7f0e",
+  "Environmental management"              = "#ffbb78",
+  "Larvivorous predators"                 = "#8c564b",
+  "Mass trapping"                         = "#9467bd",
+  "Mosquito repellents"                   = "#e377c2",
+  "Direct larviciding"                    = "#c7b8ea",
+  "Indoor/targeted residual spraying"     = "#7f7f7f")
 
 bar_df <- df %>%
   distinct(study, year, intervention_class) %>%
